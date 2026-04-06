@@ -1,0 +1,7 @@
+*_files/
+.DS_Store
+*.rdb
+*.rdx
+.Rhistory
+.RData
+.quarto/

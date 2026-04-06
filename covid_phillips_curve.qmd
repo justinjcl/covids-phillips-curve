@@ -1,0 +1,130 @@
+---
+title: "COVIDS Phillip Curve"
+author: "Justin Cornejo Leon"
+format: html
+editor: visual
+---
+
+```{r}
+#load data sets into R 
+unemployment <- read.csv("~/Documents/Projects/Code/covid_phillips_curve/data/processed/unemployment_rate.csv")
+inflation <- read.csv("~/Documents/Projects/Code/covid_phillips_curve/data/processed/inflation_rate.csv")
+```
+
+## Clean Data Sets
+
+```{r}
+#dispplay first six rows of data sets 
+head(unemployment)
+head(inflation)
+```
+
+```{r}
+#rename infaltion rate data set column 2 into "inflation_rate"
+colnames(inflation)[2] <-"inflation_rate"
+#rename unemployment data set column 2 into "unemployment_rate"
+colnames(unemployment)[2] <- "unemployment_rate"
+
+#display first siz rows of data sets 
+head(unemployment)
+head(inflation)
+```
+
+```{r}
+#check for missing values in both data sets 
+sum(is.na(inflation$inflation_rate))
+sum(is.na(unemployment$unemployment_rate))
+```
+
+```{r}
+#identify missing value
+which(is.na(unemployment$unemployment_rate))
+#identify the missing values row
+unemployment[which(is.na(unemployment$unemployment_rate)), ]
+```
+
+```{r}
+#remove row where inflation rate is missing 
+unemployment <- unemployment[!is.na(unemployment$unemployment_rate), ]
+#verify missing value was removed from the data set 
+sum(is.na(unemployment$unemployment_rate))
+```
+
+```{r}
+#convert date in both data sets into date format 
+unemployment$observation_date <- as.Date(unemployment$observation_date)
+inflation$observation_date <- as.Date(inflation$observation_date)
+
+#display first siz rows of data sets 
+head(unemployment)
+head(inflation)
+```
+
+## Merge Data Sets
+
+```{r}
+#merge data sets based on date
+merged <- merge(unemployment, inflation, by = "observation_date")
+
+#display first six rows & structure of data set 
+head(merged)
+str(merged)
+```
+
+## Plot Data
+
+```{r}
+#parameters are widened due to a second y-axis (4)
+par(mar = c(5,4,4,4) + 0.1)
+#
+plot(merged$observation_date, merged$unemployment_rate,
+     type = "l",
+     col = "steelblue",
+     lwd = 2,
+     xlab = "Date",
+     ylab = "Unemployment Rate (%)",
+     main = "Unemployment vs Inflation Over Time (2015-2025)")
+
+
+par(new = TRUE)
+plot(merged$observation_date, merged$inflation_rate,
+     type = "l",
+     col = "tomato",
+     lwd = 2,
+     axes = FALSE,
+     xlab = "",
+     ylab = "")
+axis(side = 4)
+mtext("Inflation Rate (%)", side = 4, line = 3)
+
+legend("topleft",
+       legend = c("Unemployment", "Inflation"),
+       col = c("steelblue", "tomato"),
+       lwd = 2)
+```
+
+## Regression
+
+```{r}
+#split data into pre covid 
+pre_covid <- merged[merged$observation_date < as.Date("2020-03-01"), ]
+#split data into post covid
+post_covid <- merged[merged$observation_date >= as.Date("2020-06-01"), ]
+
+#display data for pre & post covid 
+nrow(pre_covid)
+nrow(post_covid)
+
+```
+
+```{r}
+#regression forumla for pre-covid data
+pre_reg <- lm(inflation_rate ~ unemployment_rate, data = pre_covid)
+
+#regression formula for post-covid data
+post_reg <- lm(inflation_rate ~ unemployment_rate, data = post_covid)
+
+#displays regression summary 
+summary(pre_reg)
+summary(post_reg)
+```
